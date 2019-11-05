@@ -164,7 +164,7 @@ public class Board {
 	
 	/**
 	 * weaponAreaLimits getter
-	 * @return weaponAreaLimits
+	 * @return foodAreaLimits
 	 */
 	public int[][] getWeaponAreaLimits() {
 		return this.weaponAreaLimits;
@@ -295,5 +295,324 @@ public class Board {
 		}
 	}
 	
+	/**
+	 * Initialize weapons array
+	 * @param p1 player 1
+	 * @param p2 player 2
+	 */
+	public void createRandomWeapon(Player p1, Player p2) {
+		this.weapons = new Weapon[this.W];
+		
+		int minY = this.weaponAreaLimits[0][0];
+		int maxY = this.weaponAreaLimits[0][0];
+		int minX = this.weaponAreaLimits[0][1];
+		int maxX = this.weaponAreaLimits[0][1];
+		
+		for(int i=1; i<this.weaponAreaLimits.length;i++) {
+			if(this.weaponAreaLimits[i][0] < minY) {
+				minY = this.weaponAreaLimits[i][0];
+			}
+			
+			if(this.weaponAreaLimits[i][0] > maxY) {
+				maxY = this.weaponAreaLimits[i][0];
+			}
+			
+			if(this.weaponAreaLimits[i][1] < minX) {
+				minX = this.weaponAreaLimits[i][1];
+			}
+			
+			if(this.weaponAreaLimits[i][1] > maxX) {
+				maxX = this.weaponAreaLimits[i][1];
+			}
+		}
+		
+		// Find a random place for the weapon
+		 for(int i=0;i<this.W;i++) {
+			 int posX, posY;
+			 boolean notAvailable;
+			 
+			 do {
+				 notAvailable = false;
+				 do {
+					posX = (int) (Math.random() * (maxY - minY + 1)) + minY;
+				 } while(posX != 0);
+				
+				 do {
+					posY = (int) (Math.random() * (maxX - minX + 1)) + minX;
+				 } while(posY != 0);
+				 
+				 // Check if there is a weapon with the same position
+				 for(int j=0;j<this.weapons.length;j++) {
+					 if(this.weapons[i].getX() == posX && this.weapons[i].getY() == posY) {
+						 notAvailable = true;
+					 }
+				 }
+			 } while(notAvailable);
+			 
+			 // Add the weapon to the array
+			 if(i%2 == 0) {
+				 int type = (int) (Math.random() * 3);
+				 switch(type) {
+				 case 0:
+					 this.weapons[i] = new Weapon(i, posX, posY, p1.getId(), "pistol");
+					 break;
+				 case 1:
+					 this.weapons[i] = new Weapon(i, posX, posY, p1.getId(), "bow");
+					 break;
+				 case 2:
+					 this.weapons[i] = new Weapon(i, posX, posY, p1.getId(), "sword");
+					 break;
+				 }
+			 } else {
+				 int type = (int) (Math.random() * 3);
+				 switch(type) {
+				 case 0:
+					 this.weapons[i] = new Weapon(i, posX, posY, p2.getId(), "pistol");
+					 break;
+				 case 1:
+					 this.weapons[i] = new Weapon(i, posX, posY, p2.getId(), "bow");
+					 break;
+				 case 2:
+					 this.weapons[i] = new Weapon(i, posX, posY, p2.getId(), "sword");
+					 break;
+				 }
+			 }
+		 }
+	}
 	
+	/**
+	 * Initialize food array
+	 */
+	public void createRandomFood() {
+		this.food = new Food[this.F];
+		
+		// Find the food and weapon area limits 
+		int minY = this.foodAreaLimits[0][0];
+		int maxY = this.foodAreaLimits[0][0];
+		int minX = this.foodAreaLimits[0][1];
+		int maxX = this.foodAreaLimits[0][1];
+		
+		for(int i=1; i<this.foodAreaLimits.length;i++) {
+			if(this.foodAreaLimits[i][0] < minY) {
+				minY = this.foodAreaLimits[i][0];
+			}
+			
+			if(this.foodAreaLimits[i][0] > maxY) {
+				maxY = this.foodAreaLimits[i][0];
+			}
+			
+			if(this.foodAreaLimits[i][1] < minX) {
+				minX = this.foodAreaLimits[i][1];
+			}
+			
+			if(this.foodAreaLimits[i][1] > maxX) {
+				maxX = this.foodAreaLimits[i][1];
+			}
+		}
+		
+		int WminY = this.weaponAreaLimits[0][0];
+		int WmaxY = this.weaponAreaLimits[0][0];
+		int WminX = this.weaponAreaLimits[0][1];
+		int WmaxX = this.weaponAreaLimits[0][1];
+		
+		for(int i=1; i<this.weaponAreaLimits.length;i++) {
+			if(this.weaponAreaLimits[i][0] < WminY) {
+				WminY = this.weaponAreaLimits[i][0];
+			}
+			
+			if(this.weaponAreaLimits[i][0] > WmaxY) {
+				WmaxY = this.weaponAreaLimits[i][0];
+			}
+			
+			if(this.weaponAreaLimits[i][1] < WminX) {
+				WminX = this.weaponAreaLimits[i][1];
+			}
+			
+			if(this.weaponAreaLimits[i][1] > WmaxX) {
+				WmaxX = this.weaponAreaLimits[i][1];
+			}
+		}
+		
+		// Find a random place for the supply
+		for(int i=0;i<this.F;i++) {
+			int posX, posY;
+			boolean notAvailable;
+			 
+			do {
+				notAvailable = false;
+				posX = (int) (Math.random() * (maxX - WmaxX - (minX - WminX)));
+				posY = (int) (Math.random() * (maxY - WmaxY - (minY - WminY)));
+				 
+				posX = posX < (WminX - minX) ? minX + posX : posX - (WminX - minX) + WmaxX + 1;
+				posY = posY < (WminY - minY) ? minY + posY : posY - (WminY - minY) + WmaxY + 1;
+				 
+				// Check if there is a supply with the same position
+				for(int j=0;j<this.food.length;j++) {
+					if(this.food[i].getX() == posX && this.food[i].getY() == posY) {
+						notAvailable = true;
+					}
+				}
+			} while(notAvailable);
+			 
+			 
+			int points = (int) (Math.random() * 10) + 1;
+			this.food[i] = new Food(i, posX, posY, points);
+		}	
+	}
+	
+	/**
+	 * Initialize traps array
+	 */
+	public void createRandomTrap() {
+		this.traps = new Trap[this.T];
+		
+		// Find the trap and food area limits 
+		int minY = this.trapAreaLimits[0][0];
+		int maxY = this.trapAreaLimits[0][0];
+		int minX = this.trapAreaLimits[0][1];
+		int maxX = this.trapAreaLimits[0][1];
+		
+		for(int i=1; i<this.trapAreaLimits.length;i++) {
+			if(this.trapAreaLimits[i][0] < minY) {
+				minY = this.trapAreaLimits[i][0];
+			}
+			
+			if(this.trapAreaLimits[i][0] > maxY) {
+				maxY = this.trapAreaLimits[i][0];
+			}
+			
+			if(this.trapAreaLimits[i][1] < minX) {
+				minX = this.trapAreaLimits[i][1];
+			}
+			
+			if(this.trapAreaLimits[i][1] > maxX) {
+				maxX = this.trapAreaLimits[i][1];
+			}
+		}
+		
+		int FminY = this.foodAreaLimits[0][0];
+		int FmaxY = this.foodAreaLimits[0][0];
+		int FminX = this.foodAreaLimits[0][1];
+		int FmaxX = this.foodAreaLimits[0][1];
+		
+		for(int i=1; i<this.foodAreaLimits.length;i++) {
+			if(this.foodAreaLimits[i][0] < FminY) {
+				FminY = this.foodAreaLimits[i][0];
+			}
+			
+			if(this.foodAreaLimits[i][0] > FmaxY) {
+				FmaxY = this.foodAreaLimits[i][0];
+			}
+			
+			if(this.foodAreaLimits[i][1] < FminX) {
+				FminX = this.foodAreaLimits[i][1];
+			}
+			
+			if(this.foodAreaLimits[i][1] > FmaxX) {
+				FmaxX = this.foodAreaLimits[i][1];
+			}
+		}
+		
+		// Find a random place for the trap
+		for(int i=0;i<this.T;i++) {
+			int posX, posY;
+			boolean notAvailable;
+			 
+			do {
+				notAvailable = false;
+				posX = (int) (Math.random() * (maxX - FmaxX - (minX - FminX)));
+				posY = (int) (Math.random() * (maxY - FmaxY - (minY - FminY)));
+				 
+				posX = posX < (FminX - minX) ? minX + posX : posX - (FminX - minX) + FmaxX + 1;
+				posY = posY < (FminY - minY) ? minY + posY : posY - (FminY - minY) + FmaxY + 1;
+				 
+				// Check if there is a supply with the same position
+				for(int j=0;j<this.traps.length;j++) {
+					if(this.traps[i].getX() == posX && this.traps[i].getY() == posY) {
+						notAvailable = true;
+					}
+				}
+			} while(notAvailable);
+			 
+			 
+			int points = (int) (Math.random() * 10) + 1; // Random points
+			int type = (int) (Math.random() * 2); // Random type of trap
+			
+			switch(type) {
+			case 0:
+				this.traps[i] = new Trap(i, posX, posY, "ropes", -points);
+				break;
+			case 1:
+				this.traps[i] = new Trap(i, posX, posY, "animals", -points);
+				break;
+			}
+		}	
+	}
+	
+	/**
+	 * Initialize board
+	 * @param p1 player 1
+	 * @param p2 player 2
+	 */
+	public void createBoard(Player p1, Player p2) {
+		this.createBoard(p1, p2);
+		this.createRandomFood();
+		this.createRandomTrap();
+	}
+	
+	/**
+	 * Resize board if players are not at the edge
+	 * @param p1 player 1
+	 * @param p2 player 2
+	 */
+	void resizeBoard(Player p1, Player p2) {
+		// N = M 
+		int halfN = this.N/2;
+		
+		// Take the position of the players
+		int posX1, posX2, posY1, posY2;
+		posX1 = p1.getX();
+		posX2 = p2.getX();
+		posY1 = p1.getY();
+		posY2 = p2.getY();
+		
+		// absolute values of the positions
+		posX1 = posX1 > 0 ? posX1 : -posX1;
+		posX2 = posX2 > 0 ? posX2 : -posX2;
+		posY1 = posY1 > 0 ? posY1 : -posY1;
+		posY2 = posY2 > 0 ? posY2 : -posY2;
+		
+		// Check if a player if at the edge of the board
+		if(posX1 != halfN && posX2 != halfN && posY1 != halfN && posY2 != halfN) {
+			this.N = this.N - 2;
+			this.M = this.M - 2;
+		}
+	}
+	
+	public String[][] getStringRepresentation() {
+		String[][] boardView = new String[this.N][this.M];
+		
+		for(int i=0;i<this.weapons.length;i++) {
+			boardView[weapons[i].getY()][weapons[i].getX()] = "W" + weapons[i].getPlayerID() + weapons[i].getId();
+		}
+		
+		for(int i=0;i<this.food.length;i++) {
+			boardView[food[i].getY()][food[i].getX()] = "F" + food[i].getId();
+		}
+		
+		for(int i=0;i<this.traps.length;i++) {
+			boardView[traps[i].getY()][traps[i].getX()] = "T" + traps[i].getId();
+		}
+		
+		// Fill the empty spaces
+		for(int i=0;i<this.N;i++) {
+			for(int j=0;j<this.M;j++) {
+				if(boardView[i][j] == null) {
+					boardView[i][j] = "___";
+				}
+			}
+		}
+		
+		return boardView;
+	}
 }
