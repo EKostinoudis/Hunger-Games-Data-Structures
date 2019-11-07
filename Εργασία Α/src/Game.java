@@ -60,11 +60,11 @@ public class Game {
 			
 			// Print the moves of the players
 			System.out.println(p1.getName() + " moved to (" + move1[0] + "," + move1[1] +
-							   " Picked: " + move1[2] + " weapons, " + move1[3] + " supplies, " +
+							   ") Picked: " + move1[2] + " weapons, " + move1[3] + " supplies, " +
 								"Traped: " + move1[4] + " times.");
 			
 			System.out.println(p2.getName() + " moved to (" + move2[0] + "," + move2[1] +
-					   " Picked: " + move2[2] + " weapons, " + move2[3] + " supplies, " +
+					   ") Picked: " + move2[2] + " weapons, " + move2[3] + " supplies, " +
 						"Traped: " + move2[4] + " times.");
 			
 			System.out.println();
