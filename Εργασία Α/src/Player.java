@@ -14,6 +14,11 @@ public class Player {
 	Weapon sword;
 	
 	/**
+	 * Empty constructor
+	 */
+	Player() {}
+	
+	/**
 	 * Player constructor all except Weapon arguments 
 	 * @param id player's id
 	 * @param name player's name
