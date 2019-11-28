@@ -8,6 +8,15 @@ import java.util.Set;
  */
 public class HeuristicPlayer extends Player{
 	private ArrayList<Integer[]> path; // Informations about the players past moves
+	private static int r; // The visible area radius of the player
+	
+	/**
+	 * r getter
+	 * @return r
+	 */
+	int getR() {
+		return r;
+	}
 	
 	/**
 	 * path getter
@@ -18,7 +27,15 @@ public class HeuristicPlayer extends Player{
 	}
 	
 	/**
-	 * path sette
+	 * r setter
+	 * @param r
+	 */
+	void setR(int r) {
+		HeuristicPlayer.r = r;
+	}
+	
+	/**
+	 * path setter
 	 * @param path
 	 */
 	void setPath(ArrayList<Integer[]> path) {
@@ -130,7 +147,7 @@ public class HeuristicPlayer extends Player{
 	
 	/**
 	 * Calculates the Euclidean distance between this player
-	 * and the player p
+	 * and the player p (if he can see the opponent)
 	 * @param p player from who we want to calculate the distance
 	 * @return Euclidean distance between the two players
 	 */
@@ -140,22 +157,29 @@ public class HeuristicPlayer extends Player{
 		int opponentX = p.x < 0 ? p.x+1 : p.x;
 		int opponentY = p.y < 0 ? p.y+1 : p.y;
 		
-		return (float) Math.sqrt((currentX - opponentX) * (currentX - opponentX) +
-								 (currentY - opponentY) * (currentY - opponentY));
-	
-//		int dx = Math.abs(currentX - opponentX);
-//		int dy = Math.abs(currentY - opponentY);
-//		
-//		return Math.max((float) dx, (float) dy);
+		float dist = (float) Math.sqrt((currentX - opponentX) * (currentX - opponentX) +
+				 					   (currentY - opponentY) * (currentY - opponentY));
+
+		int dx = Math.abs(currentX - opponentX);
+		int dy = Math.abs(currentY - opponentY);
+		
+		int blockDist =  dx > dy ? dx : dy;
+		
+		if(blockDist <= r) {
+			return dist;
+		} else {
+			return -1f;
+		}
 	}
 	
 	/**
 	 * Calculate a score for a move based on the formula
-	 * if has a pistol takes 10 / dist points
-	 * if takes a pistol takes 5 points
-	 * if takes a bow or a sword takes 1 point
-	 * if wins K points from food take 0.5 * K points
-	 * if losses K points from a trap looses 0.5 * K points
+	 * if has a pistol takes
+	 * 		if he can see the player 100 / dist points
+	 * if takes a pistol takes 10 points
+	 * if takes a bow or a sword takes 3 points
+	 * if wins K points from food take K points
+	 * if losses K points from a trap looses K points
 	 * @param dice next move
 	 * @param p opponent
 	 * @return score for the next move
@@ -259,24 +283,32 @@ public class HeuristicPlayer extends Player{
 				}
 			}
 		}
-		
+
 		// Check if player has a gun
-		double ret; 
+		double ret = 0; 
 		if(super.pistol != null) {
+			// Change position so playersDistance can calculate the distance
+			int x = super.x;
+			int y = super.y;
+			super.x = newX;
+			super.y = newY;
 			float dist = this.playersDistance(p);
-			ret = 10 / dist;
-		} else {
-			ret = 0;
+			super.x = x;
+			super.y = y;
+			
+			if(dist >= 0) { 
+				ret += 100 / dist;
+			}
 		}
 		
 		if(bowBlock || swordBlock) {
-			ret += 1;
+			ret += 3;
 		} else if(pistolBlock) {
-			ret += 5;
+			ret += 10;
 		}
 		
 		
-		ret += 0.5 * (trapScore + foodScore);
+		ret += trapScore + foodScore;
 		
 		return ret;
 	}
@@ -287,6 +319,7 @@ public class HeuristicPlayer extends Player{
 	 * @param player1 
 	 * @param player2
 	 * @param d smallest distance that a player can't kill
+	 * @return 
 	 * @return if a player can kill
 	 */
 	static boolean kill(Player player1, Player player2, float d) {
@@ -295,7 +328,10 @@ public class HeuristicPlayer extends Player{
 		int p2X = player2.getX() < 0 ? player2.getX()+1 : player2.getX();
 		int p2Y = player2.getY() < 0 ? player2.getY()+1 : player2.getY();
 		
-		return d > Math.sqrt((p1X - p2X) * (p1X - p2X) + (p1Y - p2Y) * (p1Y - p2Y));
+		int dx = Math.abs(p1X - p2X);
+		int dy = Math.abs(p1Y - p2Y);
+		
+		return d > (dx > dy ? dx : dy);
 	}
 	
 	/**
@@ -326,7 +362,7 @@ public class HeuristicPlayer extends Player{
 				
 		Map<Integer, Double> moves = new HashMap<Integer, Double>();
 		
-		for (int move = 0; move < 8; move++) {
+		for (int move = 1; move <= 8; move++) {
 			boolean valuable = true;
 			
 			if(!up && (move == 1 || move == 8 ||move == 2)) {
@@ -345,19 +381,49 @@ public class HeuristicPlayer extends Player{
 		}
 		
 		Set<Integer> dices = moves.keySet();
-		int maxDice=0;
+		int maxDice = 0;
+		int maxCount = 0;
 		double max = Double.NEGATIVE_INFINITY;
 		for(Integer i: dices) {
 			double check = moves.get(i);
+			
 			if(check > max) {
 				max = check;
 				maxDice = i;
+				maxCount = 1;
+			} else if (check == max) {
+				maxCount++;
 			}
 		}
 		
+		// If we have more than 1 max pick a random move with max value
+		if(maxCount > 1) {
+			int randMove = (int) (Math.random() * maxCount);
+			int count = 0;
+			for(Integer i: dices) {
+				double check = moves.get(i);
+				if(check == max) {
+					if(count == randMove) {
+						maxDice = i;
+						break;
+					} else {
+						count++;
+					}
+				}
+			}
+		}
 		
 		// Calculate the next position of the player
 		int newX=super.x, newY=super.y;
+		
+		// up
+		if(maxDice == 1 || maxDice == 8 ||maxDice == 2) {
+			if(super.y-1 == 0) {
+				newY = -1;
+			} else {
+				newY = super.y - 1;
+			}
+		}
 		
 		// down
 		if(maxDice == 6 || maxDice == 5 ||maxDice == 4) {
@@ -392,6 +458,9 @@ public class HeuristicPlayer extends Player{
 		
 		Integer[] currentPath = new Integer[8];
 		currentPath[0] = maxDice;
+		for(int i = 1; i < currentPath.length; i++) {
+			currentPath[i] = 0;
+		}
 		
 		Weapon[] weapons = super.board.getWeapons();
 		for(int i = 0; i < weapons.length; i++) {
@@ -484,6 +553,7 @@ public class HeuristicPlayer extends Player{
 		int[] ret = new int[2];
 		ret[0] = newX;
 		ret[1] = newY;
+		
 		return ret;
 	}
 	
@@ -494,6 +564,7 @@ public class HeuristicPlayer extends Player{
 		 Integer[] lastPath = path.get(path.size() - 1);
 		 
 		 System.out.print(super.name + " selected dice: " + lastPath[0]);
+		 
 		 if(lastPath[2] != 0) {
 			 System.out.println(", picked a pistol.");
 		 } else if(lastPath[3] != 0) {
