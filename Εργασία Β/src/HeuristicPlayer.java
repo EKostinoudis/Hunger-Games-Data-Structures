@@ -146,6 +146,20 @@ public class HeuristicPlayer extends Player{
 	}
 	
 	/**
+	 * Constructor with HeuristicPlayer object as argument
+	 * @param heuristicPlayer HeuristicPlayer object
+	 */
+	HeuristicPlayer(HeuristicPlayer heuristicPlayer) {
+		super(heuristicPlayer.getId(), heuristicPlayer.getName(), 
+			  heuristicPlayer.getBoard(), heuristicPlayer.getScore(), 
+			  heuristicPlayer.getX(), heuristicPlayer.getY(), 
+			  heuristicPlayer.getBow(), heuristicPlayer.getPistol(), 
+			  heuristicPlayer.getSword()
+			 );
+		this.path = new ArrayList<Integer[]>(heuristicPlayer.path);
+	}
+	
+	/**
 	 * Calculates the Euclidean distance between this player
 	 * and the player p (if he can see the opponent)
 	 * @param p player from who we want to calculate the distance

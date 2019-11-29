@@ -22,8 +22,8 @@ public class Game {
 
 		// Create 2 players with starting positions at the top left 
 		// and bottom right and starting score 20
-		HeuristicPlayer p1 = new HeuristicPlayer(1, "Player 1", b, 20, -10, -10);
-		Player p2 = new Player(2, "Player 2", b, 20, 10, 10);
+		HeuristicPlayer p1 = new HeuristicPlayer(1, "Player 1", b, 0, -10, -10);
+		Player p2 = new Player(2, "Player 2", b, 0, 10, 10);
 		
 		// Set r
 		p1.setR(3);
@@ -46,15 +46,25 @@ public class Game {
 		do {
 			int[] move1, move2;
 			
+			game.setRound(game.getRound() + 1);
+			
 			// Player 1 and 2 move
 			move1 = p1.move(p2);
 			dead2 = HeuristicPlayer.kill(p1, p2, 2);
-			move2 = p2.move();
-			dead1 = HeuristicPlayer.kill(p2, p1, 2);
 			
-			if(dead1 || dead2) {
+			// If player2 is dead print player1 move and end the game
+			if(dead2) {
+				// Print round
+				System.out.println("Round: " + game.getRound());			
+				// Print the moves of the players
+				System.out.println(p1.getName() + " moved to (" + move1[0] + "," + move1[1] +")");
+				p1.statistics();
+				System.out.println();
 				break;
 			}
+			
+			move2 = p2.move();
+			dead1 = HeuristicPlayer.kill(p2, p1, 2);
 			
 			// Print round
 			System.out.println("Round: " + game.getRound());			
@@ -73,22 +83,18 @@ public class Game {
 			// Print the moves of the players
 			System.out.println(p1.getName() + " moved to (" + move1[0] + "," + move1[1] +")");
 			p1.statistics();
-			
+
 			System.out.println(p2.getName() + " moved to (" + move2[0] + "," + move2[1] +
 					   ") Picked: " + move2[2] + " weapons, " + move2[3] + " supplies, " +
 						"Traped: " + move2[4] + " times.");
 			
 			System.out.println();
 			
-			
-			
-			game.setRound(game.getRound() + 1);
-			
 			// Resize board every 3 rounds
 			if(game.getRound() % 3 == 2) {
 				b.resizeBoard(p1, p2);
 			}
-		} while(b.getN() > 4 && b.getM() > 4);
+		} while(b.getN() > 4 && b.getM() > 4 && !dead1 && !dead2);
 		
 		// Print final score
 		System.out.println("-------------------------------------------");
