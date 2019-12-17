@@ -191,8 +191,11 @@ public class MinMaxPlayer extends Player {
 	 * if takes a bow or a sword takes 3 points
 	 * if wins K points from food take K points
 	 * if losses K points from a trap looses K points
+	 * if he is outside of the [-5,5] square we subtract dist / 1000 points (dist: Manhattan distance)
 	 * @param dice next move
-	 * @param p opponent
+	 * @param x position of the player
+	 * @param y position of the player
+	 * @param opponent opponent
 	 * @return score for the next move
 	 */
 	double evaluate(int dice, int x, int y, Player opponent) {
@@ -317,6 +320,14 @@ public class MinMaxPlayer extends Player {
 			ret += 10;
 		}
 		
+		double distScore = 0;
+		distScore += newX > 0? newX: -newX;
+		distScore += newY > 0? newY: -newY;
+		distScore /= 1000;
+		
+		if(!(newX <= 5 && newX >= -5 && newY <= 5 && newY >= -5)) {
+			ret -= distScore;
+		}
 		
 		ret += trapScore + foodScore;
 		
@@ -391,7 +402,7 @@ public class MinMaxPlayer extends Player {
 		left = super.x == -halfN ? false : true;
 		right = super.x == halfN ? false : true;
 		
-		for (int move = 1; move <= 8; move++) {
+		for(int move = 1; move <= 8; move++) {
 			boolean valuable = true;
 			
 			if(!up && (move == 1 || move == 8 ||move == 2)) {
@@ -500,8 +511,7 @@ public class MinMaxPlayer extends Player {
 				
 				Node child = new Node(root, depth, nodeMove, childBoard, eval);
 				
-				ArrayList<Node> childNodes = root.getChildren();
-				childNodes.add(child);
+				root.addChild(child);
 				
 				createOpponentSubtree(child, depth + 1, newX, newY, xOpponentCurrentPos, yOpponentCurrentPos);
 			}
@@ -635,12 +645,11 @@ public class MinMaxPlayer extends Player {
 				// Create a Player object so we can call evaluate 
 				// cause someone didn't thought to pass it here
 				MinMaxPlayer copy = new MinMaxPlayer(-1, "Op", board, 0, xOpponentCurrentPos, yOpponentCurrentPos);
-				double eval = copy.evaluate(move, xOpponentCurrentPos, yOpponentCurrentPos, this);
+				double eval = parent.getNodeEvaluation() - copy.evaluate(move, xOpponentCurrentPos, yOpponentCurrentPos, this);
 				
 				Node child = new Node(parent, depth, nodeMove, childBoard, eval);
 				
-				ArrayList<Node> childNodes = parent.getChildren();
-				childNodes.add(child);
+				parent.addChild(child);
 			}
 		}
 	 }
@@ -672,10 +681,31 @@ public class MinMaxPlayer extends Player {
 		// Find the index of the best move
 		double max = Double.NEGATIVE_INFINITY;
 		int maxIndex = -1;
+		int maxCount = 0;
 		for(int i = 0; i < mins.length; i++) {
 			if(mins[i] > max) {
 				max = mins[i];
 				maxIndex = i;
+				maxCount = 1;
+			} else if (mins[i] == max) {
+				maxCount++;
+			}
+		}
+		
+		// If we have more than 1 max pick a random move with max value
+		if(maxCount > 1) {
+			int randMove = (int) (Math.random() * maxCount);
+			int count = 0;
+			for(int i = 0; i < mins.length; i++) {
+				double check = mins[i];
+				if(check == max) {
+					if(count == randMove) {
+						maxIndex = i;
+						break;
+					} else {
+						count++;
+					}
+				}
 			}
 		}
 		

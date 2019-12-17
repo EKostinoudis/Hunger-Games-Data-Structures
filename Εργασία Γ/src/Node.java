@@ -7,7 +7,7 @@ public class Node {
 	private Node parent; // Node parent
 	private ArrayList<Node> children; // Node children's
 	private int nodeDepth; // Depth of the node on MinMax tree
-	private int [] nodeMove; // Move that represents the node (contains x,y position and dice)
+	private int[] nodeMove; // Move that represents the node (contains x,y position and dice)
 	private Board nodeBoard; // Board of the game at the node move
 	private double nodeEvaluation; // Evaluation value of the node
 	
@@ -113,10 +113,12 @@ public class Node {
 	/**
 	 * Empty constructor
 	 */
-	Node() {}
+	Node() {
+		this.children = new ArrayList<Node>();
+	}
 	
 	/**
-	 * Constructor with arguments all Node variables except childer
+	 * Constructor with arguments all Node variables except children
 	 * @param parent
 	 * @param nodeDepth
 	 * @param nodeMove
@@ -124,6 +126,7 @@ public class Node {
 	 * @param nodeEvaluation
 	 */
 	Node(Node parent, int nodeDepth, int[] nodeMove, Board nodeBoard, double nodeEvaluation) {
+		this.children = new ArrayList<Node>();
 		this.parent = parent;
 		this.nodeDepth = nodeDepth;
 		this.nodeBoard = new Board(nodeBoard);
@@ -155,5 +158,13 @@ public class Node {
 		for (int i = 0; i < nodeMove.length; i++) {
 			this.nodeMove[i] = nodeMove[i];
 		}
+	}
+	
+	/**
+	 * Add child to the children list
+	 * @param child 
+	 */
+	void addChild(Node child) {
+		this.children.add(child);
 	}
 }

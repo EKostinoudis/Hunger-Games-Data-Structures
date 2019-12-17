@@ -22,11 +22,13 @@ public class Game {
 
 		// Create 2 players with starting positions at the top left 
 		// and bottom right and starting score 20
-		HeuristicPlayer p1 = new HeuristicPlayer(1, "Player 1", b, 0, -10, -10);
-		Player p2 = new Player(2, "Player 2", b, 0, 10, 10);
+		MinMaxPlayer p1 = new MinMaxPlayer(1, "Player 1", b, 15, 10, 10);
+		HeuristicPlayer p2 = new HeuristicPlayer(2, "Player 2", b, 15, 10, 10);
 		
 		// Set r
-		p1.setR(3);
+		p1.setR(100);
+		p2.setR(3);
+		
 		
 		// Add all the areas to the board
 		int[][] area = {{-2, 2}, {2, -2}, {-2, -2}, {2, 2}};
@@ -43,17 +45,20 @@ public class Game {
 		// of a player dies
 		boolean dead1 = false;
 		boolean dead2 = false;
+		boolean negScore1 = false;
+		boolean negScore2 = false;
 		do {
 			int[] move1, move2;
 			
 			game.setRound(game.getRound() + 1);
 			
 			// Player 1 and 2 move
-			move1 = p1.move(p2);
-			dead2 = HeuristicPlayer.kill(p1, p2, 2);
+			move1 = p1.getNextMove(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+			dead2 = HeuristicPlayer.kill(p1, p2, 2) && p1.getPistol() != null;
+			negScore1 = p1.getScore() < 0;
 			
 			// If player2 is dead print player1 move and end the game
-			if(dead2) {
+			if(dead2 || negScore1) {
 				// Print round
 				System.out.println("Round: " + game.getRound());			
 				// Print the moves of the players
@@ -63,8 +68,9 @@ public class Game {
 				break;
 			}
 			
-			move2 = p2.move();
-			dead1 = HeuristicPlayer.kill(p2, p1, 2);
+			move2 = p2.move(p1);
+			dead1 = HeuristicPlayer.kill(p2, p1, 2) && p2.getPistol() != null;
+			negScore2 = p2.getScore() < 0;
 			
 			// Print round
 			System.out.println("Round: " + game.getRound());			
@@ -84,9 +90,9 @@ public class Game {
 			System.out.println(p1.getName() + " moved to (" + move1[0] + "," + move1[1] +")");
 			p1.statistics();
 
-			System.out.println(p2.getName() + " moved to (" + move2[0] + "," + move2[1] +
-					   ") Picked: " + move2[2] + " weapons, " + move2[3] + " supplies, " +
-						"Traped: " + move2[4] + " times.");
+			System.out.println(p2.getName() + " moved to (" + move2[0] + "," + move2[1] +")");
+			p2.statistics();
+
 			
 			System.out.println();
 			
@@ -94,7 +100,7 @@ public class Game {
 			if(game.getRound() % 3 == 2) {
 				b.resizeBoard(p1, p2);
 			}
-		} while(b.getN() > 4 && b.getM() > 4 && !dead1 && !dead2);
+		} while(b.getN() > 4 && b.getM() > 4 && !dead1 && !dead2 && !negScore1 && !negScore2);
 		
 		// Print final score
 		System.out.println("-------------------------------------------");
@@ -104,7 +110,14 @@ public class Game {
 		System.out.println(p2.getName() + " score: " + p2.getScore());
 		System.out.println();
 		
-		if(dead1) {
+		if(negScore1) {
+			System.out.println(p1.getName() + " has negative points.");
+			System.out.println(p2.getName() + " wins.");
+		} else if(negScore2) {
+			System.out.println(p2.getName() + " has negative points.");
+			System.out.println(p1.getName() + " wins.");
+		}
+		else if(dead1) {
 			System.out.println(p2.getName() + " killed " + p1.getName() + ".");
 			System.out.println(p2.getName() + " wins.");
 		} else if(dead2) {
