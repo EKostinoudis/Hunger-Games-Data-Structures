@@ -23,12 +23,10 @@ public class Game {
 		// Create 2 players with starting positions at the top left 
 		// and bottom right and starting score 20
 		MinMaxPlayer p1 = new MinMaxPlayer(1, "Player 1", b, 15, 10, 10);
-		HeuristicPlayer p2 = new HeuristicPlayer(2, "Player 2", b, 15, 10, 10);
+		Player p2 = new Player(2, "Player 2", b, 15, 10, 10);
 		
 		// Set r
 		p1.setR(100);
-		p2.setR(3);
-		
 		
 		// Add all the areas to the board
 		int[][] area = {{-2, 2}, {2, -2}, {-2, -2}, {2, 2}};
@@ -68,8 +66,8 @@ public class Game {
 				break;
 			}
 			
-			move2 = p2.move(p1);
-			dead1 = HeuristicPlayer.kill(p2, p1, 2) && p2.getPistol() != null;
+			move2 = p2.move();
+			dead1 = MinMaxPlayer.kill(p2, p1, 2) && p2.getPistol() != null;
 			negScore2 = p2.getScore() < 0;
 			
 			// Print round
@@ -90,9 +88,10 @@ public class Game {
 			System.out.println(p1.getName() + " moved to (" + move1[0] + "," + move1[1] +")");
 			p1.statistics();
 
-			System.out.println(p2.getName() + " moved to (" + move2[0] + "," + move2[1] +")");
-			p2.statistics();
-
+			System.out.println(p2.getName() + " moved to (" + move2[0] + "," + move2[1] +
+					   ") Picked: " + move2[2] + " weapons, " + move2[3] + " supplies, " +
+						"Traped: " + move2[4] + " times.");
+			
 			
 			System.out.println();
 			
