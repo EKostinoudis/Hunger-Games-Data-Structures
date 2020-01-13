@@ -4,12 +4,16 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.*;
 import java.awt.event.ActionListener;
-import java.util.concurrent.TimeUnit;
-
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.*;  
 
 public class Game {
@@ -25,35 +29,51 @@ public class Game {
 	private boolean[] foodPanelsDone;
 	private JLabel roundPanel;
 	private JLabel p1Label, p2Label;
-//	private JPanel p1InfoPanel, p2InfoPanel;
 	private JPanel p1Collection, p2Collection;
 	private JPanel pBoard;
 	private JComboBox cb1, cb2;
 	private JButton bGenBoard, bPlay;
+	private JPanel p1InfoPanel, p2InfoPanel;
 	private Board b;
 	
-	
-	void test() {
-		SwingUtilities.invokeLater(new Runnable() {
-		    public void run() {
-		        startGUI();
-		    }
-		});
-
-	}
-	
-	void startGUI() {
-		
+	/**
+	 * Creates the main JFrame
+	 */
+	private void genarateFrame() {
 		f = new JFrame("Hunger Games");
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-	    p = new JPanel();
-	    p.setLayout(new BorderLayout()); 
-	    f.add(p);
+	}
+	
+	/**
+	 * Initialize Board of the game.
+	 * Not the players, food, guns and traps.
+	 */
+	private void initMainBoard() {
+		// Remove collected items if exists
+		if(p1Collection != null) {
+			p1InfoPanel.remove(p1Collection);
+		}
+		if(p2Collection != null) {
+			p2InfoPanel.remove(p2Collection);
+		}
 		
-	    Dimension boardSize = new Dimension(600, 600);
-	    pBoard = new JPanel();
-	    p.add(pBoard, BorderLayout.CENTER);
+		// Create collections
+		p1Collection = new JPanel(new GridLayout(0, 4));
+    	p1InfoPanel.add(p1Collection, BorderLayout.NORTH);
+    	p2Collection = new JPanel(new GridLayout(0, 4));
+    	p2InfoPanel.add(p2Collection, BorderLayout.NORTH);
+
+		
+		// Remove previous board if exists
+    	Dimension boardSize;
+		if(pBoard != null) {
+			boardSize = new Dimension(pBoard.getWidth(), pBoard.getHeight());
+			p.remove(pBoard);
+		} else {
+			boardSize = new Dimension(600, 600);
+		}
+		pBoard = new JPanel();
+		p.add(pBoard, BorderLayout.CENTER);
 	    pBoard.setLayout(new GridLayout(20, 20));
 	    pBoard.setPreferredSize(boardSize);
 	    pBoard.setBounds(0, 0, boardSize.width, boardSize.height);
@@ -74,6 +94,20 @@ public class Game {
 				}			
 	    	}
 	    }
+	    
+	    p.validate();
+		p.repaint();
+	}
+	
+	/**
+	 * Open a window with the gui of the game
+	 */
+	void startGUI() {
+		genarateFrame();
+			
+		p = new JPanel();
+	    p.setLayout(new BorderLayout()); 
+	    f.add(p);
 	    
 	    JPanel bottomPane = new JPanel();
 	    bottomPane.setLayout(new FlowLayout());
@@ -96,7 +130,6 @@ public class Game {
 	        }
 	    });
 	    
-	    
 	    bottomPane.add(cb1);
 	    bottomPane.add(bGenBoard);
 	    bottomPane.add(bPlay);
@@ -109,33 +142,29 @@ public class Game {
     	p.add(roundPanel, BorderLayout.PAGE_START);
     	
     	// Player 1 status
-    	JPanel p1InfoPanel = new JPanel(new BorderLayout());
-    	p1Collection = new JPanel(new GridLayout(0, 4));
+    	p1InfoPanel = new JPanel(new BorderLayout());
     	p.add(p1InfoPanel, BorderLayout.LINE_START);
     	p1Label = new JLabel("<html>Player A<br/>Move Score: 0<br/>Total Score: 0</html>", JLabel.CENTER);
     	p1Label.setFont(new Font(p1Label.getFont().getName(), Font.PLAIN, 20));
     	p1Label.setForeground(Color.blue);
     	p1InfoPanel.add(p1Label, BorderLayout.CENTER);
-    	p1InfoPanel.add(p1Collection, BorderLayout.NORTH);
-
 	    
     	// Player 2 status
-    	JPanel p2InfoPanel = new JPanel(new BorderLayout());
-    	p2Collection = new JPanel(new GridLayout(0, 4));
+    	p2InfoPanel = new JPanel(new BorderLayout());
     	p.add(p2InfoPanel, BorderLayout.LINE_END);
     	p2Label = new JLabel("<html>Player B<br/>Move Score: 0<br/>Total Score: 0</html>", JLabel.CENTER);
     	p2Label.setFont(new Font(p2Label.getFont().getName(), Font.PLAIN, 20));
     	p2Label.setForeground(Color.red);
     	p2InfoPanel.add(p2Label, BorderLayout.CENTER);
-    	p2InfoPanel.add(p2Collection, BorderLayout.NORTH);
     	
 	    // Generate board button action
 	    bGenBoard.addActionListener(e -> generateBoard());
 	    
-	    
+	    // Play button action
 	    bPlay.addActionListener(e -> playTheGame());
-	    	
 	    
+	    // Create main board
+	    initMainBoard();
 	    
 	    f.pack();
 	    f.setResizable(true);
@@ -147,6 +176,12 @@ public class Game {
 	 * Creates board, players and puts them at the GUI
 	 */
 	private void generateBoard(){
+		// Set and show round
+		round = 0;
+		roundPanel.setText("Round: " + round);
+		
+		initMainBoard();
+		
 		// Create a 20x20 board with 6 guns, 10 supplies and 8 traps
 		b = new Board(20, 20, 6, 10, 8);
 		
@@ -297,7 +332,7 @@ public class Game {
 		JPanel panel = (JPanel)pBoard.getComponent(index);
 		p1Panel = new JLabel(new ImageIcon(new ImageIcon("./src/files/p1.png").getImage().getScaledInstance((int) (panel.getSize().width * 0.5), (int) (panel.getSize().height * 0.7), Image.SCALE_DEFAULT)), SwingConstants.CENTER);
 		panel.add(p1Panel, BorderLayout.LINE_START);
-		
+
 		x = p2.getX();
 		y = p2.getY();
 		x = x >= 0? x-1: x;
@@ -313,17 +348,14 @@ public class Game {
 		// Add players new status
 	    p1Label.setText("<html>Player A<br/>Move Score: 0<br/>Total Score: " + p1.getScore() + "</html>");
 	    p2Label.setText("<html>Player B<br/>Move Score: 0<br/>Total Score: " + p2.getScore() + "</html>");
-	
-		// Disable generate board button and Combo boxes
-		bGenBoard.setEnabled(false);
-		cb1.setEnabled(false);
-		cb2.setEnabled(false);
 		
 		// re-paint
 		SwingUtilities.updateComponentTreeUI(f);
     }
 	
-	
+	/**
+	 * Plays the game if user selects a player to start.
+	 */
     private void playTheGame() {
     	Thread t = new Thread(new Runnable() {
             public void run () {
@@ -345,18 +377,15 @@ public class Game {
 						return;
 				}
 				
+				// Disable generate board button, combo boxes and play button
+				bGenBoard.setEnabled(false);
+				cb1.setEnabled(false);
+				cb2.setEnabled(false);
 				bPlay.setEnabled(false);
 				
 				int[] status;
 				int moveCounter = 2;
 				while(true) {
-					if(moveCounter >= 2) {
-						round++;
-						moveCounter = 0;
-						
-						roundPanel.setText("Round: " + round);
-					}
-					
 					if(p1Move) {
 						// Remove from board
 						Container parent = p1Panel.getParent();
@@ -369,17 +398,7 @@ public class Game {
 						
 						// Update status text
 						p1Label.setText("<html>Player A<br/>Move Score: " + status[0] + "<br/>Total Score: " + p1.getScore() + "</html>");
-						
-						// Player 1 killed Player 2
-						if(status[1] == 1) {
-							break;
-						}
-			
-						// Player 1 has negative points
-						if(status[2] == 1) {
-							break;
-						}
-						
+					
 						// Add new position to the board
 						int x = p1.getX();
 						int y = p1.getY();
@@ -389,7 +408,7 @@ public class Game {
 						y += 10;
 						int index = y * 20 + x;
 						JPanel panel = (JPanel)pBoard.getComponent(index);
-			    		panel.add(p1Panel, BorderLayout.LINE_START);
+			    		panel.add(p1Panel, BorderLayout.WEST);
 			    		
 			    		p1Move = false;
 			    		moveCounter++;
@@ -406,16 +425,6 @@ public class Game {
 						// Update status text
 						p2Label.setText("<html>Player B<br/>Move Score: " + status[0] + "<br/>Total Score: " + p2.getScore() + "</html>");
 						
-						// Player 2 killed Player 1
-						if(status[1] == 1) {
-							break;
-						} 
-				
-						// Player 2 has negative points
-						if(status[2] == 1) {
-							break;
-						}
-						
 						// Add new position to the board
 						int x = p2.getX();
 						int y = p2.getY();
@@ -425,10 +434,42 @@ public class Game {
 						y += 10;
 						int index = y * 20 + x;
 						JPanel panel = (JPanel)pBoard.getComponent(index);
-						panel.add(p2Panel, BorderLayout.LINE_START);
+						panel.add(p2Panel, BorderLayout.EAST);
 						
 						p1Move = true;
 						moveCounter++;
+					}
+					
+					// Update round
+					if(moveCounter >= 2) {
+						round++;
+						moveCounter = 0;
+						
+						roundPanel.setText("Round: " + round);
+					}
+					
+					// Resize board every 3 rounds
+					if(round % 3 == 1 && moveCounter == 0) {
+						boolean resized = b.resizeBoard(p1, p2);
+						
+						if(resized) {
+							// Change color to the resized blocks
+							int layer = (b.getN() / 2) + 1;
+							
+							int index1 = 10 - layer;
+							int index2 = layer + 9;
+							
+							for(int i = 0; i < 20; i++) {
+								for(int j = 0; j < 20; j++) {
+									if(i == index1 || i == index2 || j == index1 || j == index2) {
+										int index = i *20 + j;
+										JPanel panel = (JPanel)pBoard.getComponent(index);
+										panel.setBackground(Color.DARK_GRAY);
+									}
+								}
+							}
+							
+						}
 					}
 		
 					// repaint
@@ -441,6 +482,44 @@ public class Game {
 						Thread.sleep(500);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
+					}
+		            
+		            if(b.getN() <= 4 || b.getM() <= 4) {
+		            	if(p1.getScore() > p2.getScore()) {
+		            		endGame("Reached minimal board size. Player A wins!");
+		            	} else if(p1.getScore() < p2.getScore()) {
+		            		endGame("Reached minimal board size. Player B wins!");
+		            	} else {
+		            		endGame("Reached minimal board size. Draw!");
+		            	}
+		            	
+		            	break;
+		            }
+		            
+					// Player killed the other
+					if(status[1] == 1) {
+						if(p1Move) {
+							killP1();
+							endGame("Player B killed Player A. Player B wins!");
+						} else {
+							killP2();
+							endGame("Player A killed Player B. Player A wins!");
+						}
+						
+						break;
+					}
+			
+					// Player has negative points
+					if(status[2] == 1) {
+						if(p1Move) {
+							killP2();
+							endGame("Player B have negative points. Player A wins!");
+						} else {
+							killP1();
+							endGame("Player A have negative points. Player B wins!");
+						}
+						
+						break;
 					}
 				}
             }
@@ -525,6 +604,91 @@ public class Game {
 		return ret;
 	}
 	
+	/**
+	 * Rotates P1 90 degrees
+	 */
+	private void killP1() {
+		Container parent = p1Panel.getParent();
+		parent.remove(p1Panel);
+		
+		// Add new position to the board
+		int x = p1.getX();
+		int y = p1.getY();
+		x = x >= 0? x-1: x;
+		x += 10;
+		y = y >= 0? y-1: y;
+		y += 10;
+		int index = y * 20 + x;
+		JPanel panel = (JPanel)pBoard.getComponent(index);
+		
+		BufferedImage original;
+		BufferedImage rotated90;
+		try {
+			original = ImageIO.read(new File("./src/files/p1.png"));
+			
+			rotated90 = rotate(original, 90.0d);
+		    
+			p1Panel = new JLabel(new ImageIcon(new ImageIcon(rotated90).getImage().getScaledInstance((int) (panel.getSize().width * 0.5), (int) (panel.getSize().height * 0.7), Image.SCALE_DEFAULT)), SwingConstants.CENTER);
+			panel.add(p1Panel, BorderLayout.WEST);
+		}
+	    catch (IOException e) {
+
+			e.printStackTrace();
+		}
+		
+		parent.validate();
+		parent.repaint();
+	}
+	
+	/**
+	 * Rotates P2 -90 degrees
+	 */
+	private void killP2() {
+		Container parent = p2Panel.getParent();
+		parent.remove(p2Panel);
+		
+		// Add new position to the board
+		int x = p2.getX();
+		int y = p2.getY();
+		x = x >= 0? x-1: x;
+		x += 10;
+		y = y >= 0? y-1: y;
+		y += 10;
+		int index = y * 20 + x;
+		JPanel panel = (JPanel)pBoard.getComponent(index);
+		
+		BufferedImage original;
+		BufferedImage rotated90;
+		try {
+			original = ImageIO.read(new File("./src/files/p2.png"));
+			
+			rotated90 = rotate(original, -90.0d);
+		    
+			p2Panel = new JLabel(new ImageIcon(new ImageIcon(rotated90).getImage().getScaledInstance((int) (panel.getSize().width * 0.5), (int) (panel.getSize().height * 0.7), Image.SCALE_DEFAULT)), SwingConstants.CENTER);
+			panel.add(p2Panel, BorderLayout.EAST);
+		}
+	    catch (IOException e) {
+
+			e.printStackTrace();
+		}
+		
+		parent.validate();
+		parent.repaint();
+	}
+	
+	/**
+	 * Puts message at an option pane
+	 * @param message
+	 */
+	private void endGame(String message) {
+		JOptionPane.showMessageDialog(f, message, "End Game", JOptionPane.INFORMATION_MESSAGE);
+		
+		// Enable combo boxes and generate board button
+		cb1.setEnabled(true);
+		cb2.setEnabled(true);
+		bGenBoard.setEnabled(true);
+	}
+	
 	Game() {
 		round = 0;
 	}
@@ -540,138 +704,44 @@ public class Game {
 	JFrame getFrame() {
 		return f;
 	}
+
+	/**
+	 * Rotates an image
+	 * @param image image to rotate
+	 * @param degrees degrees to rotate
+	 * @return rotated image
+	 */
+	private BufferedImage rotate(BufferedImage image, Double degrees) {
+	    // Calculate the new size of the image based on the angle of rotaion
+	    double radians = Math.toRadians(degrees);
+	    double sin = Math.abs(Math.sin(radians));
+	    double cos = Math.abs(Math.cos(radians));
+	    int newWidth = (int) Math.round(image.getWidth() * cos + image.getHeight() * sin);
+	    int newHeight = (int) Math.round(image.getWidth() * sin + image.getHeight() * cos);
+
+	    // Create a new image
+	    BufferedImage rotate = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+	    Graphics2D g2d = rotate.createGraphics();
+	    
+	    // Calculate the "anchor" point around which the image will be rotated
+	    int x = (newWidth - image.getWidth()) / 2;
+	    int y = (newHeight - image.getHeight()) / 2;
+	    
+	    // Transform the origin point around the anchor point
+	    AffineTransform at = new AffineTransform();
+	    at.setToRotation(radians, x + (image.getWidth() / 2), y + (image.getHeight() / 2));
+	    at.translate(x, y);
+	    g2d.setTransform(at);
+	    
+	    // Paint the original image
+	    g2d.drawImage(image, 0, 0, null);
+	    g2d.dispose();
+	    
+	    return rotate;
+	}
 	
 	public static void main(String[] args) {
 		Game game = new Game();
 		game.startGUI();
-//		game.test();
-		
-	    
-	    
-	    
-	    
-	    
-	    
-		
-	    
-		
-		
-//    	Game game = new Game();
-//		
-//		// Create a 20x20 board with 6 guns, 10 supplies and 8 traps
-//		Board b = new Board(20, 20, 6, 10, 8);
-//
-//		// Create 2 players with starting positions at the top left 
-//		// and bottom right and starting score 20
-//		MinMaxPlayer p1 = new MinMaxPlayer(1, "Player 1", b, 15, 10, 10);
-//		Player p2 = new Player(2, "Player 2", b, 15, 10, 10);
-//		
-//		// Set r
-//		p1.setR(100);
-//		
-//		// Add all the areas to the board
-//		int[][] area = {{-2, 2}, {2, -2}, {-2, -2}, {2, 2}};
-//		b.setWeaponAreaLimits(area);
-//		area = new int[][] {{-3, 3}, {3, -3}, {-3, -3}, {3, 3}};
-//		b.setFoodAreaLimits(area);
-//		area = new int[][] {{-4, 4}, {4, -4}, {-4, -4}, {4, 4}};
-//		b.setTrapAreaLimits(area);
-//		
-//		// Create all the weapons, supplies and traps
-//		b.createBoard(p1, p2);
-//		
-//		// Play the game until board has size 4x4
-//		// of a player dies
-//		boolean dead1 = false;
-//		boolean dead2 = false;
-//		boolean negScore1 = false;
-//		boolean negScore2 = false;
-//		do {
-//			int[] move1, move2;
-//			
-//			game.setRound(game.getRound() + 1);
-//			
-//			// Player 1 and 2 move
-//			move1 = p1.getNextMove(p1.getX(), p1.getY(), p2.getX(), p2.getY());
-//			dead2 = HeuristicPlayer.kill(p1, p2, 2) && p1.getPistol() != null;
-//			negScore1 = p1.getScore() < 0;
-//			
-//			// If player2 is dead print player1 move and end the game
-//			if(dead2 || negScore1) {
-//				// Print round
-//				System.out.println("Round: " + game.getRound());			
-//				// Print the moves of the players
-//				System.out.println(p1.getName() + " moved to (" + move1[0] + "," + move1[1] +")");
-//				p1.statistics();
-//				System.out.println();
-//				break;
-//			}
-//			
-//			move2 = p2.move();
-//			dead1 = MinMaxPlayer.kill(p2, p1, 2) && p2.getPistol() != null;
-//			negScore2 = p2.getScore() < 0;
-//			
-//			// Print round
-//			System.out.println("Round: " + game.getRound());			
-//			
-//			// Get the string representation of the board
-//			String[][] rep = b.getStringRepresentation();
-//			
-//			// Print board
-//			for (int i = 0; i < rep.length; i++) {
-//				for (int j = 0; j < rep[i].length; j++) {
-//					System.out.print(rep[i][j] + " ");
-//				}
-//				System.out.println();
-//			}
-//			
-//			// Print the moves of the players
-//			System.out.println(p1.getName() + " moved to (" + move1[0] + "," + move1[1] +")");
-//			p1.statistics();
-//
-//			System.out.println(p2.getName() + " moved to (" + move2[0] + "," + move2[1] +
-//					   ") Picked: " + move2[2] + " weapons, " + move2[3] + " supplies, " +
-//						"Traped: " + move2[4] + " times.");
-//			
-//			
-//			System.out.println();
-//			
-//			// Resize board every 3 rounds
-//			if(game.getRound() % 3 == 2) {
-//				b.resizeBoard(p1, p2);
-//			}
-//		} while(b.getN() > 4 && b.getM() > 4 && !dead1 && !dead2 && !negScore1 && !negScore2);
-//		
-//		// Print final score
-//		System.out.println("-------------------------------------------");
-//		System.out.println("End of game. Rounds played: " + game.getRound());
-//		System.out.println();
-//		System.out.println(p1.getName() + " score: " + p1.getScore());
-//		System.out.println(p2.getName() + " score: " + p2.getScore());
-//		System.out.println();
-//		
-//		if(negScore1) {
-//			System.out.println(p1.getName() + " has negative points.");
-//			System.out.println(p2.getName() + " wins.");
-//		} else if(negScore2) {
-//			System.out.println(p2.getName() + " has negative points.");
-//			System.out.println(p1.getName() + " wins.");
-//		}
-//		else if(dead1) {
-//			System.out.println(p2.getName() + " killed " + p1.getName() + ".");
-//			System.out.println(p2.getName() + " wins.");
-//		} else if(dead2) {
-//			System.out.println(p1.getName() + " killed " + p2.getName() + ".");
-//			System.out.println(p1.getName() + " wins.");
-//		} else {
-//			System.out.println("Reached minimale board size.");
-//			if(p1.getScore() > p2.getScore()) {
-//				System.out.println(p1.getName() + " wins.");
-//			} else if(p2.getScore() > p1.getScore()) {
-//				System.out.println(p2.getName() + " wins.");
-//			} else {
-//				System.out.println("Draw.");
-//			}
-//		}
 	}
 }

@@ -600,8 +600,9 @@ public class Board {
 	 * Resize board if players are not at the edge
 	 * @param p1 player 1
 	 * @param p2 player 2
+	 * @return if the board had resized
 	 */
-	void resizeBoard(Player p1, Player p2) {
+	boolean resizeBoard(Player p1, Player p2) {
 		// N = M 
 		int halfN = this.N/2;
 		
@@ -622,7 +623,11 @@ public class Board {
 		if(posX1 != halfN && posX2 != halfN && posY1 != halfN && posY2 != halfN) {
 			this.N = this.N - 2;
 			this.M = this.M - 2;
+			
+			return true;
 		}
+		
+		return false;
 	}
 	
 	/**
