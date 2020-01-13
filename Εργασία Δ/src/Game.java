@@ -8,6 +8,7 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.*;
 import java.awt.event.ActionListener;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.*;  
 
@@ -19,7 +20,9 @@ public class Game {
 	private JLabel p1Panel;
 	private JLabel p2Panel;
 	private JLabel[] weaponPanels;
+	private boolean[] weaponPanelsDone;
 	private JLabel[] foodPanels;
+	private boolean[] foodPanelsDone;
 	private JLabel roundPanel;
 	private JLabel p1Label, p2Label;
 //	private JPanel p1InfoPanel, p2InfoPanel;
@@ -29,14 +32,25 @@ public class Game {
 	private JButton bGenBoard, bPlay;
 	private Board b;
 	
+	
+	void test() {
+		SwingUtilities.invokeLater(new Runnable() {
+		    public void run() {
+		        startGUI();
+		    }
+		});
+
+	}
+	
 	void startGUI() {
+		
 		f = new JFrame("Hunger Games");
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 	    p = new JPanel();
 	    p.setLayout(new BorderLayout()); 
 	    f.add(p);
-	    
+		
 	    Dimension boardSize = new Dimension(600, 600);
 	    pBoard = new JPanel();
 	    p.add(pBoard, BorderLayout.CENTER);
@@ -77,7 +91,8 @@ public class Game {
 	    JButton bQuit = new JButton("Quit");
 	    bQuit.addActionListener(new ActionListener() {
 	        public void actionPerformed(ActionEvent e){
-	            f.dispose();
+//	            f.dispose();
+	            System.exit(0);
 	        }
 	    });
 	    
@@ -185,8 +200,11 @@ public class Game {
 		
 		Food[] food = b.getFood();
 		foodPanels = new JLabel[food.length];
+		foodPanelsDone = new boolean[food.length];
 		int count = 0;
 		for (Food f : food) {
+			foodPanelsDone[count] = false;
+			
 			int x = f.getX();
 			int y = f.getY();
 			x = x >= 0? x-1: x;
@@ -236,8 +254,10 @@ public class Game {
 		
 		Weapon[] weapons = b.getWeapons();
 		weaponPanels = new JLabel[weapons.length];
+		weaponPanelsDone = new boolean[weapons.length];
 		count = 0;
 		for (Weapon w: weapons) {
+			weaponPanelsDone[count] = false;
 			int x = w.getX();
 			int y = w.getY();
 			x = x >= 0? x-1: x;
@@ -304,72 +324,132 @@ public class Game {
     }
 	
 	
-    public void playTheGame() {
-		// Create an option pane for the player who plays first
-		boolean p1First = true;
-		int result = JOptionPane.showConfirmDialog(null, "Do you want Player A play first? (No for Player B)");
-		switch (result) {
-			case JOptionPane.YES_OPTION:
-				p1First = true;
-				break;
-			case JOptionPane.NO_OPTION:
-				p1First = false;
-				break;
-			case JOptionPane.CANCEL_OPTION:
-				// No action
-				return;
-			case JOptionPane.CLOSED_OPTION:
-				// No action
-				return;
-		}
-		
-		int[] status;
-		if(p1First) {
-			// Remove from board
-			Container parent = p1Panel.getParent();
-			parent.remove(p1Panel);
-			parent.validate();
-			parent.repaint();
-			
-			// Get next move
-			status = playerMove(p1, p2);
-			
-			// Update status text
-			p1Label.setText("<html>Player A<br/>Move Score: " + status[0] + "<br/>Total Score: " + p1.getScore() + "</html>");
-			
-			// Player 1 killed Player 2
-			if(status[1] == 1) {
+    private void playTheGame() {
+    	Thread t = new Thread(new Runnable() {
+            public void run () {
+				// Create an option pane for the player who plays first
+				boolean p1Move = true;
+				int result = JOptionPane.showConfirmDialog(null, "Do you want Player A play first? (No for Player B)");
+				switch (result) {
+					case JOptionPane.YES_OPTION:
+						p1Move = true;
+						break;
+					case JOptionPane.NO_OPTION:
+						p1Move = false;
+						break;
+					case JOptionPane.CANCEL_OPTION:
+						// No action
+						return;
+					case JOptionPane.CLOSED_OPTION:
+						// No action
+						return;
+				}
 				
-			} 
-
-			// Player 1 has negative points
-			if(status[2] == 1) {
+				bPlay.setEnabled(false);
 				
-			}
+				int[] status;
+				int moveCounter = 2;
+				while(true) {
+					if(moveCounter >= 2) {
+						round++;
+						moveCounter = 0;
+						
+						roundPanel.setText("Round: " + round);
+					}
+					
+					if(p1Move) {
+						// Remove from board
+						Container parent = p1Panel.getParent();
+						parent.remove(p1Panel);
+						parent.validate();
+						parent.repaint();
+						
+						// Get next move
+						status = playerMove(p1, p2);
+						
+						// Update status text
+						p1Label.setText("<html>Player A<br/>Move Score: " + status[0] + "<br/>Total Score: " + p1.getScore() + "</html>");
+						
+						// Player 1 killed Player 2
+						if(status[1] == 1) {
+							break;
+						}
 			
-			
-			
-			// Add new position to the board
-			int x = p1.getX();
-			int y = p1.getY();
-			x = x >= 0? x-1: x;
-			x += 10;
-			y = y >= 0? y-1: y;
-			y += 10;
-			int index = y * 20 + x;
-			JPanel panel = (JPanel)pBoard.getComponent(index);
-    		panel.add(p1Panel, BorderLayout.LINE_START);
-    		
-    		// re-paint
-    		SwingUtilities.updateComponentTreeUI(f);
-		} else {
-			status = playerMove(p2, p1);
-			p2Label.setText("<html>Player B<br/>Move Score: " + status[0] + "<br/>Total Score: " + p2.getScore() + "</html>");
-		}
+						// Player 1 has negative points
+						if(status[2] == 1) {
+							break;
+						}
+						
+						// Add new position to the board
+						int x = p1.getX();
+						int y = p1.getY();
+						x = x >= 0? x-1: x;
+						x += 10;
+						y = y >= 0? y-1: y;
+						y += 10;
+						int index = y * 20 + x;
+						JPanel panel = (JPanel)pBoard.getComponent(index);
+			    		panel.add(p1Panel, BorderLayout.LINE_START);
+			    		
+			    		p1Move = false;
+			    		moveCounter++;
+					} else {
+						// Remove from board
+						Container parent = p2Panel.getParent();
+						parent.remove(p2Panel);
+						parent.validate();
+						parent.repaint();
+						
+						// Get next move
+						status = playerMove(p2, p1);
+						
+						// Update status text
+						p2Label.setText("<html>Player B<br/>Move Score: " + status[0] + "<br/>Total Score: " + p2.getScore() + "</html>");
+						
+						// Player 2 killed Player 1
+						if(status[1] == 1) {
+							break;
+						} 
+				
+						// Player 2 has negative points
+						if(status[2] == 1) {
+							break;
+						}
+						
+						// Add new position to the board
+						int x = p2.getX();
+						int y = p2.getY();
+						x = x >= 0? x-1: x;
+						x += 10;
+						y = y >= 0? y-1: y;
+						y += 10;
+						int index = y * 20 + x;
+						JPanel panel = (JPanel)pBoard.getComponent(index);
+						panel.add(p2Panel, BorderLayout.LINE_START);
+						
+						p1Move = true;
+						moveCounter++;
+					}
 		
+					// repaint
+					f.validate();
+		            f.pack();
+		            f.repaint();
+		            
 		
+		            try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+            }
+		});
+    	
+    	// Start thread
+    	t.start();
 	}
-	
+    
 	/**
 	 * Make a move
 	 * @param p player
@@ -395,20 +475,20 @@ public class Game {
 		Food[] food = b.getFood();
 		for(int i = 0; i < food.length; i++) {
 			Food f = food[i];
-			if(f.getX() == 0 && f.getY() == 0) {
+			if(f.getX() == 0 && f.getY() == 0 && !foodPanelsDone[i]) {
 				// Remove from board
 				Container parent = foodPanels[i].getParent();
-				if(parent != null || parent != p1Label) {
-					parent.remove(foodPanels[i]);
-					parent.validate();
-					parent.repaint();
-					
-					if(p.getId() == 1) {
-						p1Collection.add(foodPanels[i]);
-					} else {
-						p2Collection.add(foodPanels[i]);
-					}
+				parent.remove(foodPanels[i]);
+				parent.validate();
+				parent.repaint();
+				
+				if(p.getId() == 1) {
+					p1Collection.add(foodPanels[i]);
+				} else {
+					p2Collection.add(foodPanels[i]);
 				}
+				
+				foodPanelsDone[i] = true;
 			}
 		}
 		
@@ -416,20 +496,20 @@ public class Game {
 		Weapon[] weapons = b.getWeapons();
 		for(int i = 0; i < weapons.length; i++) {
 			Weapon w = weapons[i];
-			if(w.getX() == 0 && w.getY() == 0) {
+			if(w.getX() == 0 && w.getY() == 0 && !weaponPanelsDone[i]) {
 				// Remove from board
 				Container parent = weaponPanels[i].getParent();
-				if(parent != null || parent != p1Label) {
-					parent.remove(weaponPanels[i]);
-					parent.validate();
-					parent.repaint();
-					
-					if(p.getId() == 1) {
-						p1Collection.add(weaponPanels[i]);
-					} else {
-						p2Collection.add(weaponPanels[i]);
-					}
+				parent.remove(weaponPanels[i]);
+				parent.validate();
+				parent.repaint();
+				
+				if(p.getId() == 1) {
+					p1Collection.add(weaponPanels[i]);
+				} else {
+					p2Collection.add(weaponPanels[i]);
 				}
+				
+				weaponPanelsDone[i] = true;
 			}
 		}
 		
@@ -463,8 +543,8 @@ public class Game {
 	
 	public static void main(String[] args) {
 		Game game = new Game();
-		JFrame f = game.getFrame();
 		game.startGUI();
+//		game.test();
 		
 	    
 	    
