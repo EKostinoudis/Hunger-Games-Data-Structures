@@ -63,7 +63,6 @@ public class Game {
     	p2Collection = new JPanel(new GridLayout(0, 4));
     	p2InfoPanel.add(p2Collection, BorderLayout.NORTH);
 
-		
 		// Remove previous board if exists
     	Dimension boardSize;
 		if(pBoard != null) {
@@ -147,7 +146,7 @@ public class Game {
     	p1Label = new JLabel("<html>Player A<br/>Move Score: 0<br/>Total Score: 0</html>", JLabel.CENTER);
     	p1Label.setFont(new Font(p1Label.getFont().getName(), Font.PLAIN, 20));
     	p1Label.setForeground(Color.blue);
-    	p1InfoPanel.add(p1Label, BorderLayout.CENTER);
+    	p1InfoPanel.add(p1Label, BorderLayout.SOUTH);
 	    
     	// Player 2 status
     	p2InfoPanel = new JPanel(new BorderLayout());
@@ -155,7 +154,7 @@ public class Game {
     	p2Label = new JLabel("<html>Player B<br/>Move Score: 0<br/>Total Score: 0</html>", JLabel.CENTER);
     	p2Label.setFont(new Font(p2Label.getFont().getName(), Font.PLAIN, 20));
     	p2Label.setForeground(Color.red);
-    	p2InfoPanel.add(p2Label, BorderLayout.CENTER);
+    	p2InfoPanel.add(p2Label, BorderLayout.SOUTH);
     	
 	    // Generate board button action
 	    bGenBoard.addActionListener(e -> generateBoard());
@@ -306,7 +305,7 @@ public class Game {
 			
 			JPanel panel = (JPanel)pBoard.getComponent(index);
 			if(type == "sword") {
-				weaponPanels[count] = new JLabel(new ImageIcon(new ImageIcon("./src/files/sword.jpg").getImage().getScaledInstance((int) (panel.getSize().width * 0.8), (int) (panel.getSize().height * 0.8), Image.SCALE_DEFAULT)), JLabel.CENTER);
+				weaponPanels[count] = new JLabel(new ImageIcon(new ImageIcon("./src/files/sword.png").getImage().getScaledInstance((int) (panel.getSize().width * 0.8), (int) (panel.getSize().height * 0.8), Image.SCALE_DEFAULT)), JLabel.CENTER);
 			} else if(type == "bow") {
 				weaponPanels[count] = new JLabel(new ImageIcon(new ImageIcon("./src/files/bow.png").getImage().getScaledInstance((int) (panel.getSize().width * 0.8), (int) (panel.getSize().height * 0.8), Image.SCALE_DEFAULT)), JLabel.CENTER);
 			} else {
@@ -331,7 +330,7 @@ public class Game {
 		
 		JPanel panel = (JPanel)pBoard.getComponent(index);
 		p1Panel = new JLabel(new ImageIcon(new ImageIcon("./src/files/p1.png").getImage().getScaledInstance((int) (panel.getSize().width * 0.5), (int) (panel.getSize().height * 0.7), Image.SCALE_DEFAULT)), SwingConstants.CENTER);
-		panel.add(p1Panel, BorderLayout.LINE_START);
+		panel.add(p1Panel, BorderLayout.WEST);
 
 		x = p2.getX();
 		y = p2.getY();
@@ -343,7 +342,7 @@ public class Game {
 		
 		panel = (JPanel)pBoard.getComponent(index);
 		p2Panel = new JLabel(new ImageIcon(new ImageIcon("./src/files/p2.png").getImage().getScaledInstance((int) (panel.getSize().width * 0.5), (int) (panel.getSize().height * 0.7), Image.SCALE_DEFAULT)), SwingConstants.CENTER);
-		panel.add(p2Panel, BorderLayout.LINE_END);
+		panel.add(p2Panel, BorderLayout.EAST);
 		
 		// Add players new status
 	    p1Label.setText("<html>Player A<br/>Move Score: 0<br/>Total Score: " + p1.getScore() + "</html>");
