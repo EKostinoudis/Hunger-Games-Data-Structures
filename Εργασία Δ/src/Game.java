@@ -174,7 +174,7 @@ public class Game {
 	/**
 	 * Creates board, players and puts them at the GUI
 	 */
-	private void generateBoard(){
+	private void generateBoard() {
 		// Set and show round
 		round = 0;
 		roundPanel.setText("Round: " + round);
@@ -467,7 +467,6 @@ public class Game {
 									}
 								}
 							}
-							
 						}
 					}
 		
@@ -476,7 +475,6 @@ public class Game {
 		            f.pack();
 		            f.repaint();
 		            
-		
 		            try {
 						Thread.sleep(500);
 					} catch (InterruptedException e) {
